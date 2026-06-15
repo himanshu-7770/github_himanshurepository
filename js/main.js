@@ -77,8 +77,12 @@
 
   /* ---------- 3D tilt on cards (pointer parallax) ---------- */
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduce && window.matchMedia('(pointer:fine)').matches) {
-    document.querySelectorAll('.tilt').forEach(function (el) {
+  var canTilt = !reduce && window.matchMedia('(pointer:fine)').matches;
+  window.applyTilt = function (selector) {
+    if (!canTilt) return;
+    document.querySelectorAll(selector || '.tilt').forEach(function (el) {
+      if (el._tilt) return;            // avoid double-binding
+      el._tilt = true;
       el.addEventListener('mousemove', function (ev) {
         var r = el.getBoundingClientRect();
         var px = (ev.clientX - r.left) / r.width - 0.5;
@@ -88,7 +92,8 @@
       });
       el.addEventListener('mouseleave', function () { el.style.transform = ''; });
     });
-  }
+  };
+  window.applyTilt('.tilt');
 
   /* ---------- Contact form (front-end only demo) ---------- */
   var form = document.getElementById('contactForm');

@@ -34,11 +34,11 @@
       </a>
       <nav class="nav-links" id="navLinks">
         <a href="#about">About</a>
-        <a href="#properties">Plots</a>
-        <a href="#why">Why Invest</a>
+        <a href="#portal" data-mode="buy">Buy</a>
+        <a href="#portal" data-mode="rent">Rent</a>
         <a href="#gallery">Gallery</a>
         <a href="#contact">Contact</a>
-        <a href="tel:+919719910070" class="nav-cta">Call Now</a>
+        <a href="#portal" data-mode="post" class="nav-cta">＋ Post Property</a>
       </nav>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
         <span></span><span></span><span></span>
@@ -56,8 +56,8 @@
       <p class="hero-sub reveal">Premium residential plots on prime, fast-growing locations along GT Road.
         Clear titles, honest guidance, and a better investment opportunity — for 30 years and counting.</p>
       <div class="hero-actions reveal">
-        <a href="#properties" class="btn btn-primary">Explore Plots</a>
-        <a href="#contact" class="btn btn-ghost">Book a Site Visit</a>
+        <a href="#portal" data-mode="buy" class="btn btn-primary">Browse Properties</a>
+        <a href="#portal" data-mode="post" class="btn btn-ghost">Post Your Property — Free</a>
       </div>
       <div class="hero-stats reveal">
         <div class="stat"><span class="num" data-count="30">0</span><span class="lbl">Years of Trust</span></div>
@@ -96,71 +96,217 @@
     </div>
   </section>
 
-  <!-- Properties / Plots -->
-  <section class="properties section" id="properties">
+  <!-- Property Marketplace Portal -->
+  <section class="portal section" id="portal">
     <div class="container">
       <div class="section-head reveal">
-        <span class="eyebrow">Featured Opportunities</span>
-        <h2>Prime plots ready for <span class="grad">your future</span></h2>
-        <p>Hand-selected residential plots on growing locations. Float over a card to take a closer look.</p>
+        <span class="eyebrow">Property Marketplace</span>
+        <h2>Buy, Sell or Rent — <span class="grad">all in one place</span></h2>
+        <p>List your property for free in minutes, or find your next home. Anyone can post —
+          buyers, sellers, owners &amp; agents.</p>
       </div>
-      <div class="cards">
-        <article class="card tilt">
-          <div class="card-img">
-            <img loading="lazy" src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80" alt="Open residential plot" />
-            <span class="tag">Hot Deal</span>
-          </div>
-          <div class="card-body">
-            <h3>Vidya Vihar Residency</h3>
-            <p class="loc">📍 GT Road, Near Mandi Samiti, Etah</p>
-            <div class="card-meta">
-              <span>🏡 100–200 Sq. Yd.</span>
-              <span>📐 Corner Units</span>
-            </div>
-            <div class="card-foot">
-              <span class="price">₹ On Request</span>
-              <a href="#contact" class="card-link">Enquire →</a>
-            </div>
-          </div>
-        </article>
 
-        <article class="card tilt">
-          <div class="card-img">
-            <img loading="lazy" src="https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=800&q=80" alt="Plotted development" />
-            <span class="tag">Premium</span>
-          </div>
-          <div class="card-body">
-            <h3>Moonlight Greens</h3>
-            <p class="loc">📍 Shitalpur, Etah, Uttar Pradesh</p>
-            <div class="card-meta">
-              <span>🏡 Gated Layout</span>
-              <span>🌳 Green Belt</span>
-            </div>
-            <div class="card-foot">
-              <span class="price">₹ On Request</span>
-              <a href="#contact" class="card-link">Enquire →</a>
-            </div>
-          </div>
-        </article>
+      <!-- Mode tabs -->
+      <div class="portal-tabs" id="portalTabs">
+        <button class="ptab active" data-mode="buy"><span>🏠</span> Buy</button>
+        <button class="ptab" data-mode="rent"><span>🔑</span> Rent</button>
+        <button class="ptab" data-mode="post"><span>＋</span> Sell / Rent Out</button>
+      </div>
 
-        <article class="card tilt">
-          <div class="card-img">
-            <img loading="lazy" src="https://images.unsplash.com/photo-1592595896551-12b371d546d5?auto=format&fit=crop&w=800&q=80" alt="Investment plot" />
-            <span class="tag">High ROI</span>
+      <!-- BROWSE pane (buy + rent) -->
+      <div class="portal-pane" id="browsePane">
+        <form class="search-bar" id="searchForm">
+          <div class="sb-field grow">
+            <label>Location</label>
+            <input name="q" id="searchQ" placeholder="Search city or locality — e.g. Etah, Aligarh, Agra" autocomplete="off" />
           </div>
-          <div class="card-body">
-            <h3>GT Corridor Plots</h3>
-            <p class="loc">📍 Prime Growth Corridor, Etah</p>
-            <div class="card-meta">
-              <span>🛣️ Highway Facing</span>
-              <span>📈 Fast Appreciation</span>
-            </div>
-            <div class="card-foot">
-              <span class="price">₹ On Request</span>
-              <a href="#contact" class="card-link">Enquire →</a>
-            </div>
+          <div class="sb-field">
+            <label>Property Type</label>
+            <select name="ptype">
+              <option value="">Any type</option>
+              <option>Residential Plot</option>
+              <option>Apartment / Flat</option>
+              <option>Independent House / Villa</option>
+              <option>Builder Floor</option>
+              <option>Agricultural Land</option>
+              <option>Commercial / Shop</option>
+              <option>Office Space</option>
+            </select>
           </div>
-        </article>
+          <div class="sb-field">
+            <label>Bedrooms</label>
+            <select name="bhk">
+              <option value="">Any</option>
+              <option value="1">1 BHK</option>
+              <option value="2">2 BHK</option>
+              <option value="3">3 BHK</option>
+              <option value="4">4+ BHK</option>
+            </select>
+          </div>
+          <div class="sb-field">
+            <label>Budget (max)</label>
+            <select name="budget" id="budgetSelect"></select>
+          </div>
+          <button class="btn btn-primary" type="submit">🔍 Search</button>
+        </form>
+
+        <div class="results-meta" id="resultsMeta"></div>
+        <div class="results" id="resultsExact"></div>
+
+        <div class="nearby-head" id="nearbyHead" hidden>
+          <h3>Nearby properties you may like</h3>
+        </div>
+        <div class="results" id="resultsNearby"></div>
+
+        <div class="empty" id="emptyState" hidden>
+          <div class="empty-mark">🏘️</div>
+          <h3>No properties here yet</h3>
+          <p>Be the first to list in this area — it's free.</p>
+          <button class="btn btn-primary" data-mode="post" id="emptyPost">Post a Property</button>
+        </div>
+      </div>
+
+      <!-- POST pane (sell / rent out) -->
+      <div class="portal-pane hidden" id="postPane">
+        <form class="post-form" id="postForm">
+          <div class="pf-grid">
+            <div class="pf-full">
+              <span class="pf-label">I want to</span>
+              <div class="seg" role="radiogroup">
+                <label><input type="radio" name="listingType" value="sale" checked /><span>Sell</span></label>
+                <label><input type="radio" name="listingType" value="rent" /><span>Rent / Lease out</span></label>
+              </div>
+            </div>
+
+            <label class="pf-field">Property Type *
+              <select name="ptype" required>
+                <option value="">Select type</option>
+                <option>Residential Plot</option>
+                <option>Apartment / Flat</option>
+                <option>Independent House / Villa</option>
+                <option>Builder Floor</option>
+                <option>Agricultural Land</option>
+                <option>Commercial / Shop</option>
+                <option>Office Space</option>
+              </select>
+            </label>
+
+            <label class="pf-field">Ad Title *
+              <input name="title" maxlength="70" placeholder="e.g. 200 sq.yd corner plot on GT Road" required />
+            </label>
+
+            <label class="pf-field rentHide">Bedrooms (BHK)
+              <select name="bhk">
+                <option value="">N/A (land/plot)</option>
+                <option value="1">1 BHK</option>
+                <option value="2">2 BHK</option>
+                <option value="3">3 BHK</option>
+                <option value="4">4 BHK</option>
+                <option value="5">5+ BHK</option>
+              </select>
+            </label>
+
+            <label class="pf-field rentHide">Bathrooms
+              <select name="bath">
+                <option value="">N/A</option>
+                <option>1</option><option>2</option><option>3</option><option>4+</option>
+              </select>
+            </label>
+
+            <label class="pf-field">Furnishing
+              <select name="furnish">
+                <option value="">N/A</option>
+                <option>Unfurnished</option>
+                <option>Semi-Furnished</option>
+                <option>Fully Furnished</option>
+              </select>
+            </label>
+
+            <label class="pf-field">Built-up Area *
+              <div class="inline">
+                <input name="area" type="number" min="0" placeholder="e.g. 200" required />
+                <select name="areaUnit">
+                  <option>Sq. Yd.</option>
+                  <option>Sq. Ft.</option>
+                  <option>Sq. M.</option>
+                  <option>Acre</option>
+                </select>
+              </div>
+            </label>
+
+            <label class="pf-field saleOnly">Expected Price (₹) *
+              <input name="price" type="number" min="0" placeholder="e.g. 2500000" />
+            </label>
+
+            <label class="pf-field rentOnly" hidden>Monthly Rent (₹) *
+              <input name="rent" type="number" min="0" placeholder="e.g. 12000" />
+            </label>
+            <label class="pf-field rentOnly" hidden>Security Deposit (₹)
+              <input name="deposit" type="number" min="0" placeholder="e.g. 50000" />
+            </label>
+            <label class="pf-field rentOnly" hidden>Available From
+              <input name="availFrom" type="date" />
+            </label>
+            <label class="pf-field rentOnly" hidden>Preferred Tenants
+              <select name="tenants">
+                <option>Anyone</option>
+                <option>Family</option>
+                <option>Bachelors</option>
+                <option>Company / Lease</option>
+              </select>
+            </label>
+
+            <label class="pf-field">City *
+              <input name="city" placeholder="e.g. Etah" required />
+            </label>
+            <label class="pf-field">Locality / Area *
+              <input name="locality" placeholder="e.g. Vidya Vihar Colony, GT Road" required />
+            </label>
+            <label class="pf-field pf-full">Full Address
+              <input name="address" placeholder="House/plot no., street, landmark, pincode" />
+            </label>
+
+            <label class="pf-field pf-full">Description
+              <textarea name="desc" rows="3" placeholder="Describe your property — amenities, road width, facing, nearby schools/market, etc."></textarea>
+            </label>
+
+            <label class="pf-field">Your Name *
+              <input name="owner" placeholder="Full name" required />
+            </label>
+            <label class="pf-field">Phone *
+              <input name="phone" type="tel" placeholder="10-digit mobile" required />
+            </label>
+            <label class="pf-field">Email *
+              <input name="email" type="email" placeholder="you@example.com" required />
+            </label>
+            <label class="pf-field">Posting As
+              <select name="postedBy">
+                <option>Owner</option>
+                <option>Agent / Dealer</option>
+                <option>Builder</option>
+              </select>
+            </label>
+
+            <div class="pf-full">
+              <span class="pf-label">Photos (up to 6)</span>
+              <label class="uploader" id="uploader">
+                <input type="file" id="photoInput" accept="image/*" multiple hidden />
+                <span class="up-ico">📷</span>
+                <span>Tap to add property photos</span>
+                <small>Good photos get up to 5× more enquiries</small>
+              </label>
+              <div class="thumbs" id="thumbs"></div>
+            </div>
+
+            <label class="pf-field pf-full check">
+              <input type="checkbox" name="agree" required />
+              <span>I confirm these details are correct and agree to be contacted about this listing.</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary full" type="submit">🚀 Post My Property — Free</button>
+          <p class="form-note" id="postNote"></p>
+        </form>
       </div>
     </div>
   </section>
@@ -249,8 +395,9 @@
       <p class="footer-tag">Premium plots &amp; real estate in Etah, Uttar Pradesh · Serving since 1995.</p>
       <nav class="footer-links">
         <a href="#about">About</a>
-        <a href="#properties">Plots</a>
-        <a href="#gallery">Gallery</a>
+        <a href="#portal" data-mode="buy">Buy</a>
+        <a href="#portal" data-mode="rent">Rent</a>
+        <a href="#portal" data-mode="post">Post Property</a>
         <a href="#contact">Contact</a>
       </nav>
       <p class="copy">© <span id="year"></span> The Moon Estate. All rights reserved.</p>
@@ -259,7 +406,17 @@
 
   <a href="https://wa.me/919719910070" class="fab" target="_blank" rel="noopener" aria-label="WhatsApp">💬</a>
 
+  <!-- Property detail modal -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/portal.js"></script>
 </body>
 </html>
