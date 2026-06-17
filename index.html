@@ -148,9 +148,13 @@
             <select name="budget" id="budgetSelect"></select>
           </div>
           <button class="btn btn-primary" type="submit">🔍 Search</button>
+          <button class="btn btn-ghost fav-toggle" id="favToggle" type="button">♥ Saved (<span class="fav-n">0</span>)</button>
         </form>
 
-        <div class="results-meta" id="resultsMeta"></div>
+        <div class="results-bar">
+          <div class="results-meta" id="resultsMeta"></div>
+          <span class="store-badge" id="storeBadge"></span>
+        </div>
         <div class="results" id="resultsExact"></div>
 
         <div class="nearby-head" id="nearbyHead" hidden>
@@ -399,6 +403,7 @@
         <a href="#portal" data-mode="rent">Rent</a>
         <a href="#portal" data-mode="post">Post Property</a>
         <a href="#contact">Contact</a>
+        <a href="#" data-admin>Admin</a>
       </nav>
       <p class="copy">© <span id="year"></span> The Moon Estate. All rights reserved.</p>
     </div>
@@ -415,7 +420,22 @@
     </div>
   </div>
 
+  <!-- Admin panel modal -->
+  <div class="modal" id="adminModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card admin-card" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="admin-inner">
+        <h2>Admin · Manage Listings</h2>
+        <div id="adminBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/store.js"></script>
   <script src="js/main.js"></script>
   <script src="js/portal.js"></script>
 </body>
