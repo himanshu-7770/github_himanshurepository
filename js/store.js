@@ -38,6 +38,7 @@
   /* ---------- Public API ---------- */
   var Store = {
     mode: client ? 'supabase' : 'local',
+    SEED: SEED,
 
     // make sure a fresh Supabase project has the sample data
     seedIfEmpty: async function () {

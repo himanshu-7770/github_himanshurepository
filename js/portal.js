@@ -378,16 +378,20 @@
   async function init() {
     updateFavCount();
     showLoading();
+    var loadFailed = false;
     try {
       if (Store.seedIfEmpty) await Store.seedIfEmpty();
       listings = await Store.list();
     } catch (err) {
-      console.warn('[portal] load failed, using empty set:', err);
-      $('#resultsMeta').innerHTML = '<span style="color:#c0392b">Could not load listings. Check your Supabase config.</span>';
-      listings = [];
+      console.warn('[portal] Supabase load failed, showing sample data:', err);
+      loadFailed = true;
+      listings = (Store.SEED || []).slice();   // keep the marketplace populated
     }
     var badge = $('#storeBadge');
-    if (badge) badge.textContent = Store.mode === 'supabase' ? '☁️ Live shared database' : '💾 Local demo mode';
+    if (badge) {
+      if (loadFailed) badge.innerHTML = '<span title="Run supabase.sql in your Supabase project to finish setup">⚠️ Sample data — finish DB setup</span>';
+      else badge.textContent = Store.mode === 'supabase' ? '☁️ Live shared database' : '💾 Local demo mode';
+    }
     renderResults();
   }
   init();
