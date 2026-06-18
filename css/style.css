@@ -366,6 +366,29 @@ h2{font-size:clamp(2rem,4vw,3.1rem)}
 .footer-links a:hover{color:var(--gold-deep)}
 .copy{color:var(--ink-soft);font-size:.82rem;margin-top:8px}
 
+/* ===== Legal page ===== */
+.legal-page{background:var(--bg)}
+.legal-top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 22px;max-width:var(--maxw);margin:0 auto;background:rgba(247,244,238,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.legal-top .brand-mark{width:34px;height:34px}
+.legal-wrap{padding:40px 22px 90px;max-width:860px}
+.legal-nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.legal-nav a{padding:9px 18px;border-radius:50px;border:1px solid var(--line);background:var(--bg-2);font-weight:600;font-size:.9rem;color:var(--ink-soft)}
+.legal-nav a:hover{color:var(--ink);box-shadow:var(--shadow-sm)}
+.legal-updated{color:var(--ink-soft);font-size:.88rem;margin-bottom:26px}
+.legal-doc{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(24px,4vw,44px);box-shadow:var(--shadow-sm);margin-bottom:26px;scroll-margin-top:90px}
+.legal-doc h1{font-size:clamp(2rem,4vw,2.7rem);margin-bottom:14px}
+.legal-doc h2{font-family:'Manrope';font-size:1.08rem;font-weight:700;color:var(--ink);margin:22px 0 8px}
+.legal-doc p,.legal-doc li{color:var(--ink-soft);font-size:.97rem;margin-bottom:10px}
+.legal-doc ul{padding-left:20px;margin-bottom:10px}
+.legal-doc a{color:var(--gold-deep);font-weight:600}
+.legal-foot{font-weight:600;color:var(--ink)!important;margin-top:18px}
+.legal-back{text-align:center;margin-top:10px}
+
+/* footer legal links */
+.footer-legal{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.footer-legal a{color:var(--ink-soft);font-size:.84rem}
+.footer-legal a:hover{color:var(--gold-deep)}
+
 /* ===== Floating buttons ===== */
 .fab{position:fixed;right:22px;bottom:22px;z-index:90;width:58px;height:58px;border-radius:50%;display:grid;place-content:center;font-size:1.5rem;background:#25d366;box-shadow:0 12px 30px rgba(37,211,102,.45);animation:floatY 3s ease-in-out infinite;border:0;cursor:pointer;color:#fff}
 .fab:hover{transform:scale(1.08)}
