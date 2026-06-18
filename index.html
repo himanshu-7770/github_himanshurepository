@@ -38,6 +38,7 @@
         <a href="#portal" data-mode="rent">Rent</a>
         <a href="#gallery">Gallery</a>
         <a href="#contact">Contact</a>
+        <a href="#" id="authBtn" class="nav-login">Login</a>
         <a href="#portal" data-mode="post" class="nav-cta">＋ Post Property</a>
       </nav>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -428,6 +429,34 @@
       <div class="admin-inner">
         <h2>Admin · Manage Listings</h2>
         <div id="adminBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login / Sign-up modal -->
+  <div class="modal" id="authModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card auth-card" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="auth-inner">
+        <div class="auth-brand"><img src="assets/logo.svg" alt="The Moon Estate" /><span>The Moon Estate</span></div>
+        <div class="auth-tabs">
+          <button class="auth-tab on" data-authtab="login">Login</button>
+          <button class="auth-tab" data-authtab="signup">Create account</button>
+        </div>
+        <div id="authBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Account modal -->
+  <div class="modal" id="accountModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card account-card" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="account-inner">
+        <h2>My Account</h2>
+        <div id="accountBody"></div>
       </div>
     </div>
   </div>

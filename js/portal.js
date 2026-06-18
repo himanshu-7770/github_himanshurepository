@@ -7,10 +7,13 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var FAV_KEY = 'tme_favs_v1';
+  var cfg = window.TME_CONFIG || {};
 
   var listings = [];          // in-memory cache
   var currentMode = 'buy';
   var showSavedOnly = false;
+  var me = null;              // logged-in user (or null)
+  var pendingPost = false;    // user clicked Post while logged out
 
   /* ---------- formatting helpers ---------- */
   function inr(n) {
@@ -48,11 +51,16 @@
   /* ---------- tabs / panes ---------- */
   var browsePane = $('#browsePane'), postPane = $('#postPane');
   function setMode(mode, scroll) {
+    // Posting requires a logged-in account
+    if (mode === 'post' && !me) { pendingPost = true; openAuth('login'); return; }
     currentMode = mode;
     $$('#portalTabs .ptab').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-mode') === mode);
     });
-    if (mode === 'post') { browsePane.classList.add('hidden'); postPane.classList.remove('hidden'); }
+    if (mode === 'post') {
+      browsePane.classList.add('hidden'); postPane.classList.remove('hidden');
+      prefillOwner();
+    }
     else { postPane.classList.add('hidden'); browsePane.classList.remove('hidden'); renderResults(); }
     if (scroll) {
       var top = $('#portal').getBoundingClientRect().top + window.scrollY - 70;
@@ -281,6 +289,13 @@
   $$('[name="listingType"]', postForm).forEach(function (r) { r.addEventListener('change', syncListingType); });
   syncListingType();
 
+  function prefillOwner() {
+    if (!me) return;
+    var p = profileOf(me);
+    var setIf = function (name, val) { var el = postForm.querySelector('[name="' + name + '"]'); if (el && !el.value && val) el.value = val; };
+    setIf('owner', p.name); setIf('phone', p.phone); setIf('email', me.email);
+  }
+
   /* ---------- image upload (compressed) ---------- */
   var pendingImages = [];
   var thumbs = $('#thumbs');
@@ -319,6 +334,7 @@
   postForm.addEventListener('submit', async function (e) {
     e.preventDefault();
     var note = $('#postNote');
+    if (!me) { pendingPost = true; openAuth('login'); return; }
     var fd = new FormData(postForm);
     var phone = (fd.get('phone') || '').replace(/\D/g, '');
     if (phone.length < 10) { note.style.color = '#c0392b'; note.textContent = 'Please enter a valid 10-digit phone number.'; return; }
@@ -332,7 +348,8 @@
       city: (fd.get('city') || '').trim(), locality: (fd.get('locality') || '').trim(),
       address: (fd.get('address') || '').trim(), desc: (fd.get('desc') || '').trim(),
       owner: (fd.get('owner') || '').trim(), phone: phone, email: (fd.get('email') || '').trim(),
-      postedBy: fd.get('postedBy') || 'Owner', images: pendingImages.slice(), ts: Date.now()
+      postedBy: fd.get('postedBy') || 'Owner', images: pendingImages.slice(),
+      ownerUid: me.id, ts: Date.now()
     };
     if (type === 'rent') { l.rent = Number(fd.get('rent')) || 0; l.deposit = Number(fd.get('deposit')) || 0; l.availFrom = fd.get('availFrom') || ''; l.tenants = fd.get('tenants') || 'Anyone'; }
     else { l.price = Number(fd.get('price')) || 0; }
@@ -355,6 +372,134 @@
     } finally { btn.disabled = false; }
   });
 
+  /* ---------- User accounts: login / sign-up / profile ---------- */
+  var authModal = $('#authModal'), authBody = $('#authBody');
+  var accountModal = $('#accountModal'), accountBody = $('#accountBody');
+  var authBtn = $('#authBtn');
+  var profileOf = function (u) { return (u && u.user_metadata) ? u.user_metadata : {}; };
+
+  function updateAuthUI() {
+    if (!authBtn) return;
+    if (me) {
+      var nm = (profileOf(me).name || me.email || 'Account').split(' ')[0];
+      authBtn.textContent = '👤 ' + nm;
+      authBtn.classList.add('signedin');
+    } else {
+      authBtn.textContent = 'Login';
+      authBtn.classList.remove('signedin');
+    }
+  }
+  if (authBtn) authBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (me) openAccount(); else openAuth('login');
+  });
+  $$('[data-close]', authModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(authModal); }); });
+  $$('[data-close]', accountModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(accountModal); }); });
+
+  function openAuth(tab) { renderAuth(tab || 'login'); openOverlay(authModal); }
+
+  function renderAuth(tab) {
+    $$('.auth-tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-authtab') === tab); });
+    if (tab === 'signup') {
+      authBody.innerHTML =
+        '<form class="auth-form" id="authForm">' +
+          (pendingPost ? '<p class="auth-note-top">Create a free account to post your property.</p>' : '') +
+          '<input name="name" placeholder="Full name" required />' +
+          '<input name="phone" type="tel" placeholder="Phone (10-digit)" required />' +
+          '<input name="email" type="email" placeholder="Email" required />' +
+          '<input name="password" type="password" placeholder="Password (min 6 chars)" minlength="6" required />' +
+          '<button class="btn btn-primary full" type="submit">Create account</button>' +
+          '<p class="form-note" id="authNote"></p>' +
+          '<p class="auth-switch">Already have an account? <a href="#" data-authtab="login">Login</a></p>' +
+        '</form>';
+    } else {
+      authBody.innerHTML =
+        '<form class="auth-form" id="authForm">' +
+          (pendingPost ? '<p class="auth-note-top">Please log in to post your property.</p>' : '') +
+          '<input name="email" type="email" placeholder="Email" required />' +
+          '<input name="password" type="password" placeholder="Password" required />' +
+          '<button class="btn btn-primary full" type="submit">Login</button>' +
+          '<p class="form-note" id="authNote"></p>' +
+          '<p class="auth-switch">New here? <a href="#" data-authtab="signup">Create an account</a></p>' +
+        '</form>';
+    }
+    $$('[data-authtab]', authBody).forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); renderAuth(a.getAttribute('data-authtab')); }); });
+    $('#authForm').addEventListener('submit', tab === 'signup' ? handleSignup : handleLogin);
+  }
+  $$('.auth-tab').forEach(function (b) { b.addEventListener('click', function () { renderAuth(b.getAttribute('data-authtab')); }); });
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    var note = $('#authNote'); note.style.color = ''; note.textContent = 'Logging in…';
+    var fd = new FormData(e.target);
+    try {
+      await Store.signIn((fd.get('email') || '').trim(), fd.get('password') || '');
+      me = await Store.currentUser();
+      afterAuthSuccess();
+    } catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + friendlyAuthErr(err); }
+  }
+  async function handleSignup(e) {
+    e.preventDefault();
+    var note = $('#authNote'); note.style.color = ''; note.textContent = 'Creating your account…';
+    var fd = new FormData(e.target);
+    var phone = (fd.get('phone') || '').replace(/\D/g, '');
+    if (phone.length < 10) { note.style.color = '#c0392b'; note.textContent = 'Please enter a valid 10-digit phone.'; return; }
+    try {
+      await Store.signUp((fd.get('email') || '').trim(), fd.get('password') || '',
+        { name: (fd.get('name') || '').trim(), phone: phone });
+      me = await Store.currentUser();
+      if (!me) {
+        note.style.color = ''; note.textContent = '✅ Account created! Please check your email to confirm, then log in.';
+        setTimeout(function () { renderAuth('login'); }, 2500);
+        return;
+      }
+      afterAuthSuccess();
+    } catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + friendlyAuthErr(err); }
+  }
+  function friendlyAuthErr(err) {
+    var m = (err && err.message) || 'Something went wrong';
+    if (/already registered|already exists/i.test(m)) return 'This email is already registered — try logging in.';
+    if (/invalid login/i.test(m)) return 'Wrong email or password.';
+    if (/email not confirmed/i.test(m)) return 'Please confirm your email first (check your inbox).';
+    return m;
+  }
+  function afterAuthSuccess() {
+    closeOverlay(authModal);
+    updateAuthUI();
+    if (pendingPost) { pendingPost = false; setMode('post', true); }
+  }
+
+  function openAccount() {
+    var p = profileOf(me);
+    var mine = listings.filter(function (l) { return l.ownerUid && l.ownerUid === me.id; });
+    accountBody.innerHTML =
+      '<div class="acc-profile">' +
+        '<div class="acc-avatar">' + esc((p.name || me.email || 'U').charAt(0).toUpperCase()) + '</div>' +
+        '<div><strong>' + esc(p.name || 'My profile') + '</strong>' +
+          '<span>' + esc(me.email || '') + (p.phone ? ' · ' + esc(p.phone) : '') + '</span></div>' +
+        '<button class="adm-logout" id="accLogout">Sign out</button>' +
+      '</div>' +
+      '<div class="acc-actions"><button class="btn btn-primary" id="accPost">＋ Post a property</button></div>' +
+      '<h3 class="acc-h">My Listings (' + mine.length + ')</h3>' +
+      (mine.length ? '<div class="adm-list">' + mine.map(function (l) {
+        return '<div class="adm-row"><img src="' + esc(firstImg(l)) + '" onerror="this.src=\'' + placeholderImg(l) + '\'" />' +
+          '<div class="adm-meta"><strong>' + esc(l.title) + '</strong><span>' + esc(l.locality) + ', ' + esc(l.city) + ' · ' + (l.listingType === 'rent' ? 'Rent' : 'Sale') + '</span></div>' +
+          '<button class="adm-del" data-mydel="' + l.id + '">Delete</button></div>';
+      }).join('') + '</div>' : '<p class="adm-empty">You haven\'t posted any property yet.</p>');
+    $('#accLogout').addEventListener('click', async function () { await Store.signOut(); me = null; updateAuthUI(); closeOverlay(accountModal); renderResults(); });
+    $('#accPost').addEventListener('click', function () { closeOverlay(accountModal); setMode('post', true); });
+    $$('[data-mydel]', accountBody).forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.getAttribute('data-mydel');
+        if (!confirm('Delete this listing permanently?')) return;
+        b.disabled = true; b.textContent = '…';
+        try { await Store.remove(id); listings = listings.filter(function (x) { return x.id !== id; }); renderResults(); openAccount(); }
+        catch (err) { alert('Delete failed: ' + (err.message || err)); b.disabled = false; b.textContent = 'Delete'; }
+      });
+    });
+    openOverlay(accountModal);
+  }
+
   /* ---------- Admin panel (secure login + leads) ---------- */
   var adminModal = $('#adminModal'), adminBody = $('#adminBody');
   var adminTab = 'listings';
@@ -367,7 +512,19 @@
     adminBody.innerHTML = '<p class="adm-empty">Loading…</p>';
     var user = null;
     try { user = await Store.currentUser(); } catch (e) {}
-    if (!user) renderLogin(); else renderManage(user);
+    if (!user) { renderLogin(); return; }
+    if (!Store.isAdmin(user)) { renderNotAdmin(user); return; }
+    renderManage(user);
+  }
+
+  function renderNotAdmin(user) {
+    adminBody.innerHTML =
+      '<div class="adm-empty">' +
+        '<p>Logged in as <strong>' + esc(user.email) + '</strong> — not an admin account.</p>' +
+        '<p>Admin tools (all listings &amp; leads) are restricted to the business owner.</p>' +
+        '<button class="adm-logout" id="naLogout">Sign out</button>' +
+      '</div>';
+    $('#naLogout').addEventListener('click', async function () { await Store.signOut(); me = null; updateAuthUI(); refreshAdminView(); });
   }
 
   function renderLogin() {
@@ -384,7 +541,7 @@
       e.preventDefault();
       var note = $('#admNote'); note.style.color = ''; note.textContent = 'Signing in…';
       var fd = new FormData(e.target);
-      try { await Store.signIn((fd.get('email') || '').trim(), fd.get('password') || ''); refreshAdminView(); }
+      try { await Store.signIn((fd.get('email') || '').trim(), fd.get('password') || ''); me = await Store.currentUser(); updateAuthUI(); refreshAdminView(); }
       catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + (err.message || 'Sign in failed'); }
     });
   }
@@ -402,7 +559,7 @@
         '<button class="adm-tabbtn' + (adminTab === 'leads' ? ' on' : '') + '" data-atab="leads">📥 Leads (' + leads.length + ')</button>' +
       '</div>' +
       '<div id="admPane"></div>';
-    $('#admLogout').addEventListener('click', async function () { await Store.signOut(); adminTab = 'listings'; refreshAdminView(); });
+    $('#admLogout').addEventListener('click', async function () { await Store.signOut(); me = null; updateAuthUI(); adminTab = 'listings'; refreshAdminView(); });
     $$('[data-atab]').forEach(function (b) { b.addEventListener('click', function () { adminTab = b.getAttribute('data-atab'); renderManage(user); }); });
     if (adminTab === 'leads') renderLeadsPane(leads); else renderListingsPane();
   }
@@ -457,6 +614,8 @@
   function showLoading() { $('#resultsMeta').textContent = 'Loading properties…'; }
   async function init() {
     updateFavCount();
+    try { me = await Store.currentUser(); } catch (e) {}
+    updateAuthUI();
     showLoading();
     var loadFailed = false;
     try {

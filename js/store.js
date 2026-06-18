@@ -82,7 +82,17 @@
       if (res.error) throw res.error;
     },
 
-    /* ---------- Admin authentication ---------- */
+    /* ---------- Admin / user authentication ---------- */
+    isAdmin: function (user) {
+      return !!(user && user.email && cfg.ADMIN_EMAIL &&
+        user.email.toLowerCase() === String(cfg.ADMIN_EMAIL).toLowerCase());
+    },
+    signUp: async function (email, password, meta) {
+      if (!client) { localAuthed = true; return { user: { email: email, user_metadata: meta || {} }, session: {} }; }
+      var res = await client.auth.signUp({ email: email, password: password, options: { data: meta || {} } });
+      if (res.error) throw res.error;
+      return res.data; // { user, session } — session is null if email confirmation is required
+    },
     signIn: async function (email, password) {
       if (!client) {
         // local demo mode: accept the passcode in the password field

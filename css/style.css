@@ -279,6 +279,33 @@ h2{font-size:clamp(2rem,4vw,3.1rem)}
 .lead-acts{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .btn.sm{padding:8px 12px;min-width:auto}
 
+/* nav login */
+.nav-login{font-weight:600!important;color:var(--gold-deep)!important;cursor:pointer}
+.nav-login.signedin{padding:8px 16px;border-radius:50px;background:#f1ead9;color:var(--ink)!important}
+
+/* auth + account modals */
+.auth-card,.account-card{display:block;grid-template-columns:none;width:min(440px,100%)}
+.account-card{width:min(560px,100%)}
+.auth-inner,.account-inner{padding:clamp(26px,4vw,38px)}
+.auth-brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:18px;font-family:'Cormorant Garamond';font-size:1.3rem;font-weight:700}
+.auth-brand img{width:34px;height:34px}
+.auth-tabs{display:flex;gap:8px;margin-bottom:18px}
+.auth-tab{flex:1;border:1px solid var(--line);background:var(--bg-2);border-radius:12px;padding:11px;font-family:'Manrope';font-weight:600;font-size:.92rem;cursor:pointer;color:var(--ink-soft)}
+.auth-tab.on{background:linear-gradient(120deg,var(--gold-deep),var(--gold));color:#fff;border-color:transparent}
+.auth-form{display:flex;flex-direction:column;gap:12px}
+.auth-form input{padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#fff;font-family:'Manrope';font-size:.95rem}
+.auth-form input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,162,74,.14)}
+.auth-note-top{background:#f1ead9;color:var(--ink);padding:10px 14px;border-radius:10px;font-size:.88rem;text-align:center}
+.auth-switch{text-align:center;font-size:.88rem;color:var(--ink-soft)}
+.auth-switch a{color:var(--gold-deep);font-weight:600}
+.account-inner h2{font-size:1.9rem;margin-bottom:18px}
+.acc-profile{display:flex;align-items:center;gap:14px;padding:16px;background:#f1ead9;border-radius:16px;margin-bottom:16px}
+.acc-avatar{width:50px;height:50px;border-radius:50%;display:grid;place-content:center;background:linear-gradient(120deg,var(--gold-deep),var(--gold));color:#fff;font-weight:700;font-size:1.3rem;flex:0 0 auto}
+.acc-profile>div span{display:block;font-size:.82rem;color:var(--ink-soft)}
+.acc-profile .adm-logout{margin-left:auto}
+.acc-actions{margin-bottom:18px}
+.acc-h{font-size:1.4rem;margin-bottom:12px}
+
 /* modal enquiry form */
 .m-enq{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
 .m-enq h4{font-family:'Cormorant Garamond';font-size:1.3rem;margin-bottom:10px}
