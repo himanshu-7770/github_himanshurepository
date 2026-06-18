@@ -417,11 +417,25 @@
         <a href="#contact">Contact</a>
         <a href="#" data-admin>Admin</a>
       </nav>
+      <button class="footer-share" id="shareSite">🔗 Share this website</button>
       <p class="copy">© <span id="year"></span> The Moon Estate. All rights reserved.</p>
     </div>
   </footer>
 
   <a href="https://wa.me/919719910070" class="fab" target="_blank" rel="noopener" aria-label="WhatsApp">💬</a>
+  <button class="fab fab-share" id="shareFab" aria-label="Share this site">🔗</button>
+
+  <!-- Share modal -->
+  <div class="modal" id="shareModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card share-card" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="share-inner">
+        <h3 id="shareTitle">Share</h3>
+        <div id="shareBody"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Property detail modal -->
   <div class="modal" id="modal" hidden>

@@ -248,6 +248,7 @@
           '<a class="btn btn-primary" href="tel:+' + wa + '">📞 Call</a>' +
           '<a class="btn btn-ghost" href="https://wa.me/' + wa + '?text=' + msg + '" target="_blank" rel="noopener">💬 WhatsApp</a>' +
           (l.email ? '<a class="btn btn-ghost" href="mailto:' + esc(l.email) + '?subject=' + encodeURIComponent('Enquiry: ' + l.title) + '">✉️ Email</a>' : '') +
+          '<button class="btn btn-ghost" id="mShare">🔗 Share</button>' +
         '</div>' +
         '<form class="m-enq" id="mEnq">' +
           '<h4>📞 Request a callback</h4>' +
@@ -286,14 +287,68 @@
         t.classList.add('on');
       });
     });
+    var sh = $('#mShare');
+    if (sh) sh.addEventListener('click', function () {
+      doShare(l.title + ' — ' + SITE_NAME, 'Check out this property: ' + l.title + ' in ' + l.locality + ', ' + l.city + '.', siteUrl(l.id));
+    });
+
     openOverlay(modal);
+    try { history.replaceState(null, '', '#p=' + l.id); } catch (e) {}
+  }
+  function clearListingHash() {
+    if (/^#p=/.test(location.hash || '')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
   }
 
   /* ---------- overlay helpers ---------- */
   function openOverlay(el) { el.hidden = false; document.body.style.overflow = 'hidden'; }
   function closeOverlay(el) { el.hidden = true; if (!$$('.modal:not([hidden])').length) document.body.style.overflow = ''; }
-  $$('[data-close]', modal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(modal); }); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $$('.modal').forEach(closeOverlay); });
+  $$('[data-close]', modal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(modal); clearListingHash(); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { $$('.modal').forEach(closeOverlay); clearListingHash(); } });
+
+  /* ---------- Share (site + individual listings) ---------- */
+  var shareModal = $('#shareModal'), shareBody = $('#shareBody'), shareTitle = $('#shareTitle');
+  $$('[data-close]', shareModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(shareModal); }); });
+
+  var SITE_NAME = 'The Moon Estate';
+  var SITE_TAGLINE = 'Premium plots & real estate in Etah, UP — buy, sell & rent property. Serving since 1995. 🌙';
+  function siteUrl(id) {
+    var base = location.origin + location.pathname;
+    return id ? base + '#p=' + id : base;
+  }
+  async function doShare(title, text, url) {
+    if (navigator.share) {
+      try { await navigator.share({ title: title, text: text, url: url }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; } // fall through to fallback
+    }
+    openShareFallback(title, text, url);
+  }
+  function openShareFallback(title, text, url) {
+    shareTitle.textContent = title || 'Share';
+    var enc = encodeURIComponent, msg = enc((text ? text + ' ' : '') + url);
+    var links = [
+      ['WhatsApp', '💬', 'https://wa.me/?text=' + msg],
+      ['Facebook', '📘', 'https://www.facebook.com/sharer/sharer.php?u=' + enc(url)],
+      ['X (Twitter)', '✖', 'https://twitter.com/intent/tweet?text=' + enc(text || '') + '&url=' + enc(url)],
+      ['Telegram', '✈️', 'https://t.me/share/url?url=' + enc(url) + '&text=' + enc(text || '')],
+      ['Email', '✉️', 'mailto:?subject=' + enc(title || SITE_NAME) + '&body=' + msg]
+    ];
+    shareBody.innerHTML =
+      '<div class="share-grid">' +
+        links.map(function (l) { return '<a class="share-btn" href="' + l[2] + '" target="_blank" rel="noopener"><span>' + l[1] + '</span>' + l[0] + '</a>'; }).join('') +
+      '</div>' +
+      '<div class="share-copy"><input id="shareLink" readonly value="' + esc(url) + '" /><button class="btn btn-primary" id="shareCopy">Copy</button></div>';
+    var copyBtn = $('#shareCopy');
+    copyBtn.addEventListener('click', function () {
+      var inp = $('#shareLink'); inp.select();
+      var done = function () { copyBtn.textContent = '✓ Copied'; setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1600); };
+      if (navigator.clipboard) navigator.clipboard.writeText(inp.value).then(done, function () { document.execCommand('copy'); done(); });
+      else { document.execCommand('copy'); done(); }
+    });
+    openOverlay(shareModal);
+  }
+  function shareSite() { doShare(SITE_NAME, SITE_TAGLINE, siteUrl()); }
+  if ($('#shareFab')) $('#shareFab').addEventListener('click', shareSite);
+  if ($('#shareSite')) $('#shareSite').addEventListener('click', shareSite);
 
   /* ---------- post form: type toggle ---------- */
   var postForm = $('#postForm');
@@ -783,6 +838,13 @@
       else badge.textContent = Store.mode === 'supabase' ? '☁️ Live shared database' : '💾 Local demo mode';
     }
     renderResults();
+    openFromHash();
+  }
+  function openFromHash() {
+    var m = (location.hash || '').match(/^#p=(.+)$/);
+    if (!m) return;
+    var id = decodeURIComponent(m[1]);
+    if (listings.some(function (x) { return x.id === id; })) setTimeout(function () { openModal(id); }, 350);
   }
   init();
 })();
