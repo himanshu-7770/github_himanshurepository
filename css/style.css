@@ -253,6 +253,9 @@ h2{font-size:clamp(2rem,4vw,3.1rem)}
 .adm-meta span{font-size:.78rem;color:var(--ink-soft)}
 .adm-del{border:0;background:#fdecec;color:#c0392b;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;font-family:'Manrope';transition:background .2s}
 .adm-del:hover{background:#f8d7d7}
+.row-acts{display:flex;gap:6px;flex:0 0 auto}
+.adm-edit{border:0;background:#eef3f7;color:#2563a8;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;font-family:'Manrope';transition:background .2s}
+.adm-edit:hover{background:#dce8f5}
 @media(max-width:520px){.adm-stats{grid-template-columns:repeat(2,1fr)}}
 
 /* admin login */

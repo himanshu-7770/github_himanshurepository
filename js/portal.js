@@ -14,6 +14,7 @@
   var showSavedOnly = false;
   var me = null;              // logged-in user (or null)
   var pendingPost = false;    // user clicked Post while logged out
+  var editingId = null;       // id of the listing being edited (or null)
 
   /* ---------- formatting helpers ---------- */
   function inr(n) {
@@ -50,16 +51,17 @@
 
   /* ---------- tabs / panes ---------- */
   var browsePane = $('#browsePane'), postPane = $('#postPane');
-  function setMode(mode, scroll) {
+  function setMode(mode, scroll, keepEdit) {
     // Posting requires a logged-in account
     if (mode === 'post' && !me) { pendingPost = true; openAuth(); return; }
+    if (!keepEdit) clearEdit();
     currentMode = mode;
     $$('#portalTabs .ptab').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-mode') === mode);
     });
     if (mode === 'post') {
       browsePane.classList.add('hidden'); postPane.classList.remove('hidden');
-      prefillOwner();
+      if (!editingId) freshPostForm();
     }
     else { postPane.classList.add('hidden'); browsePane.classList.remove('hidden'); renderResults(); }
     if (scroll) {
@@ -312,6 +314,45 @@
     setIf('owner', p.name); setIf('phone', p.phone); setIf('email', me.email);
   }
 
+  var POST_BTN_DEFAULT = '🚀 Post My Property — Free';
+  function setPostBtn(txt) { var b = postForm.querySelector('button[type="submit"]'); if (b) b.textContent = txt; }
+  function clearEdit() {
+    if (!editingId) return;
+    editingId = null; setPostBtn(POST_BTN_DEFAULT);
+    var pn = $('#postNote'); if (pn) pn.textContent = '';
+  }
+  function freshPostForm() {
+    postForm.reset(); pendingImages = []; renderThumbs();
+    var cl = $('#postCityList'); if (cl) cl.innerHTML = '';
+    syncListingType(); setPostBtn(POST_BTN_DEFAULT); prefillOwner();
+  }
+  function setF(name, val) { var el = postForm.querySelector('[name="' + name + '"]'); if (el) el.value = (val == null ? '' : val); }
+  function fillFormFromListing(l) {
+    var rt = postForm.querySelector('[name="listingType"][value="' + (l.listingType || 'sale') + '"]');
+    if (rt) rt.checked = true;
+    syncListingType();
+    setF('ptype', l.ptype); setF('title', l.title); setF('bhk', l.bhk); setF('bath', l.bath);
+    setF('furnish', l.furnish); setF('area', l.area); setF('areaUnit', l.areaUnit);
+    setF('state', l.state);
+    var IN = window.INDIA || { cities: {} };
+    var cl = $('#postCityList'); if (cl) cl.innerHTML = (IN.cities[l.state] || []).map(function (c) { return '<option value="' + esc(c) + '"></option>'; }).join('');
+    setF('city', l.city); setF('locality', l.locality); setF('address', l.address); setF('desc', l.desc);
+    setF('owner', l.owner); setF('phone', l.phone); setF('email', l.email); setF('postedBy', l.postedBy);
+    if (l.listingType === 'rent') { setF('rent', l.rent); setF('deposit', l.deposit); setF('availFrom', l.availFrom); setF('tenants', l.tenants); }
+    else { setF('price', l.price); }
+    pendingImages = (l.images || []).slice(); renderThumbs();
+    var ag = postForm.querySelector('[name="agree"]'); if (ag) ag.checked = true;
+  }
+  function startEdit(id) {
+    var l = listings.filter(function (x) { return x.id === id; })[0];
+    if (!l || !me) return;
+    editingId = id;
+    setMode('post', true, true);   // keepEdit = true
+    fillFormFromListing(l);
+    setPostBtn('💾 Update property');
+    var pn = $('#postNote'); if (pn) { pn.style.color = ''; pn.textContent = 'Editing your listing — make changes and click Update.'; }
+  }
+
   /* ---------- image upload (compressed) ---------- */
   var pendingImages = [];
   var thumbs = $('#thumbs');
@@ -356,8 +397,9 @@
     if (phone.length < 10) { note.style.color = '#c0392b'; note.textContent = 'Please enter a valid 10-digit phone number.'; return; }
 
     var type = fd.get('listingType');
+    var editing = editingId ? listings.filter(function (x) { return x.id === editingId; })[0] : null;
     var l = {
-      id: 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      id: editingId || ('u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
       listingType: type, ptype: fd.get('ptype'), title: (fd.get('title') || '').trim(),
       bhk: fd.get('bhk') || '', bath: fd.get('bath') || '', furnish: fd.get('furnish') || '',
       area: Number(fd.get('area')) || '', areaUnit: fd.get('areaUnit'),
@@ -366,17 +408,26 @@
       address: (fd.get('address') || '').trim(), desc: (fd.get('desc') || '').trim(),
       owner: (fd.get('owner') || '').trim(), phone: phone, email: (fd.get('email') || '').trim(),
       postedBy: fd.get('postedBy') || 'Owner', images: pendingImages.slice(),
-      ownerUid: me.id, ts: Date.now()
+      ownerUid: (editing && editing.ownerUid) || me.id,
+      ts: editing ? editing.ts : Date.now()
     };
     if (type === 'rent') { l.rent = Number(fd.get('rent')) || 0; l.deposit = Number(fd.get('deposit')) || 0; l.availFrom = fd.get('availFrom') || ''; l.tenants = fd.get('tenants') || 'Anyone'; }
     else { l.price = Number(fd.get('price')) || 0; }
 
+    var isEdit = !!editingId;
     var btn = $('#postForm button[type="submit"]');
-    btn.disabled = true; note.style.color = ''; note.textContent = 'Publishing…';
+    btn.disabled = true; note.style.color = ''; note.textContent = isEdit ? 'Updating…' : 'Publishing…';
     try {
-      await Store.add(l);
-      listings.unshift(l);
-      note.textContent = '✅ Your property is now live! Redirecting to your listing…';
+      if (isEdit) {
+        await Store.update(l);
+        for (var i = 0; i < listings.length; i++) { if (listings[i].id === l.id) { listings[i] = l; break; } }
+        note.textContent = '✅ Listing updated!';
+      } else {
+        await Store.add(l);
+        listings.unshift(l);
+        note.textContent = '✅ Your property is now live! Redirecting to your listing…';
+      }
+      clearEdit();
       postForm.reset(); pendingImages = []; renderThumbs(); syncListingType();
       setTimeout(function () {
         setMode(type === 'rent' ? 'rent' : 'buy', true);
@@ -385,7 +436,7 @@
         note.textContent = '';
       }, 900);
     } catch (err) {
-      note.style.color = '#c0392b'; note.textContent = '⚠️ ' + (err.message || 'Could not publish. Please try again.');
+      note.style.color = '#c0392b'; note.textContent = '⚠️ ' + (err.message || 'Could not save. Please try again.');
     } finally { btn.disabled = false; }
   });
 
@@ -576,10 +627,14 @@
       (mine.length ? '<div class="adm-list">' + mine.map(function (l) {
         return '<div class="adm-row"><img src="' + esc(firstImg(l)) + '" onerror="this.src=\'' + placeholderImg(l) + '\'" />' +
           '<div class="adm-meta"><strong>' + esc(l.title) + '</strong><span>' + esc(l.locality) + ', ' + esc(l.city) + ' · ' + (l.listingType === 'rent' ? 'Rent' : 'Sale') + '</span></div>' +
-          '<button class="adm-del" data-mydel="' + l.id + '">Delete</button></div>';
+          '<div class="row-acts"><button class="adm-edit" data-myedit="' + l.id + '">Edit</button>' +
+          '<button class="adm-del" data-mydel="' + l.id + '">Delete</button></div></div>';
       }).join('') + '</div>' : '<p class="adm-empty">You haven\'t posted any property yet.</p>');
     $('#accLogout').addEventListener('click', async function () { await Store.signOut(); me = null; updateAuthUI(); closeOverlay(accountModal); renderResults(); });
     $('#accPost').addEventListener('click', function () { closeOverlay(accountModal); setMode('post', true); });
+    $$('[data-myedit]', accountBody).forEach(function (b) {
+      b.addEventListener('click', function () { closeOverlay(accountModal); startEdit(b.getAttribute('data-myedit')); });
+    });
     $$('[data-mydel]', accountBody).forEach(function (b) {
       b.addEventListener('click', async function () {
         var id = b.getAttribute('data-mydel');
@@ -664,8 +719,12 @@
         '<img src="' + esc(firstImg(l)) + '" onerror="this.src=\'' + placeholderImg(l) + '\'" />' +
         '<div class="adm-meta"><strong>' + esc(l.title) + '</strong>' +
           '<span>' + esc(l.locality) + ', ' + esc(l.city) + ' · ' + (l.listingType === 'rent' ? 'Rent' : 'Sale') + ' · ' + esc(l.owner) + '</span></div>' +
-        '<button class="adm-del" data-del="' + l.id + '">Delete</button></div>';
+        '<div class="row-acts"><button class="adm-edit" data-aedit="' + l.id + '">Edit</button>' +
+        '<button class="adm-del" data-del="' + l.id + '">Delete</button></div></div>';
     }).join('') + '</div>';
+    $$('[data-aedit]', pane).forEach(function (b) {
+      b.addEventListener('click', function () { closeOverlay(adminModal); startEdit(b.getAttribute('data-aedit')); });
+    });
     $$('[data-del]', pane).forEach(function (b) {
       b.addEventListener('click', async function () {
         var id = b.getAttribute('data-del');

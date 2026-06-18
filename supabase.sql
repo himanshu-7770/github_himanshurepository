@@ -21,13 +21,22 @@ drop policy if exists "public delete listings" on public.listings;
 drop policy if exists "auth delete listings"   on public.listings;
 drop policy if exists "auth insert listings"   on public.listings;
 drop policy if exists "owner or admin delete"  on public.listings;
+drop policy if exists "owner or admin update"  on public.listings;
 
 -- anyone can browse
 create policy "public read listings" on public.listings for select using (true);
 -- only logged-in users can post (stops anonymous spam)
 create policy "auth insert listings" on public.listings for insert
   with check (auth.role() = 'authenticated');
--- a user can delete only their OWN listing; the admin can delete any
+-- a user can EDIT only their OWN listing; the admin can edit any
+create policy "owner or admin update" on public.listings for update using (
+  (data->>'ownerUid') = auth.uid()::text
+  or auth.jwt()->>'email' = 'lucky05290@gmail.com'
+) with check (
+  (data->>'ownerUid') = auth.uid()::text
+  or auth.jwt()->>'email' = 'lucky05290@gmail.com'
+);
+-- a user can DELETE only their OWN listing; the admin can delete any
 create policy "owner or admin delete" on public.listings for delete using (
   (data->>'ownerUid') = auth.uid()::text
   or auth.jwt()->>'email' = 'lucky05290@gmail.com'

@@ -82,6 +82,16 @@
       if (res.error) throw res.error;
     },
 
+    update: async function (listing) {
+      if (!client) {
+        var list = localList().map(function (x) { return x.id === listing.id ? listing : x; });
+        localSave(list); return listing;
+      }
+      var res = await client.from('listings').update({ data: listing }).eq('id', listing.id);
+      if (res.error) throw res.error;
+      return listing;
+    },
+
     /* ---------- Admin / user authentication ---------- */
     isAdmin: function (user) {
       return !!(user && user.email && cfg.ADMIN_EMAIL &&
