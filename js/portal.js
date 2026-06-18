@@ -223,7 +223,35 @@
           '<a class="btn btn-ghost" href="https://wa.me/' + wa + '?text=' + msg + '" target="_blank" rel="noopener">💬 WhatsApp</a>' +
           (l.email ? '<a class="btn btn-ghost" href="mailto:' + esc(l.email) + '?subject=' + encodeURIComponent('Enquiry: ' + l.title) + '">✉️ Email</a>' : '') +
         '</div>' +
+        '<form class="m-enq" id="mEnq">' +
+          '<h4>📞 Request a callback</h4>' +
+          '<div class="m-enq-row"><input name="name" placeholder="Your name" required />' +
+          '<input name="phone" type="tel" placeholder="Your phone" required /></div>' +
+          '<input name="message" placeholder="Message (optional)" />' +
+          '<button class="btn btn-primary full" type="submit">Send enquiry</button>' +
+          '<p class="form-note" id="mEnqNote"></p>' +
+        '</form>' +
       '</div>';
+
+    var enq = $('#mEnq');
+    if (enq) enq.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var note = $('#mEnqNote'); note.style.color = '';
+      var fd = new FormData(enq);
+      var ph = (fd.get('phone') || '').replace(/\D/g, '');
+      if (!(fd.get('name') || '').trim() || ph.length < 10) {
+        note.style.color = '#c0392b'; note.textContent = 'Please enter your name and a valid 10-digit phone.'; return;
+      }
+      var lead = {
+        id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        name: (fd.get('name') || '').trim(), phone: ph, message: (fd.get('message') || '').trim(),
+        propertyId: l.id, propertyTitle: l.title, city: l.city, ts: Date.now()
+      };
+      var btn = enq.querySelector('button'); btn.disabled = true; note.textContent = 'Sending…';
+      try { await Store.addLead(lead); note.style.color = ''; note.textContent = '✅ Thank you! The owner will contact you soon.'; enq.reset(); }
+      catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ Could not send — please call instead.'; }
+      finally { btn.disabled = false; }
+    });
 
     $$('#mGallery .m-thumbs img').forEach(function (t) {
       t.addEventListener('click', function () {
@@ -327,48 +355,100 @@
     } finally { btn.disabled = false; }
   });
 
-  /* ---------- Admin panel ---------- */
+  /* ---------- Admin panel (secure login + leads) ---------- */
   var adminModal = $('#adminModal'), adminBody = $('#adminBody');
+  var adminTab = 'listings';
   $$('[data-admin]').forEach(function (el) {
-    el.addEventListener('click', function (e) {
-      e.preventDefault();
-      var pass = prompt('Enter admin passcode:');
-      if (pass == null) return;
-      if (pass !== (window.TME_CONFIG && window.TME_CONFIG.ADMIN_PASSCODE)) { alert('Incorrect passcode.'); return; }
-      renderAdmin(); openOverlay(adminModal);
-    });
+    el.addEventListener('click', function (e) { e.preventDefault(); openOverlay(adminModal); refreshAdminView(); });
   });
   $$('[data-close]', adminModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(adminModal); }); });
 
-  function renderAdmin() {
-    var sale = listings.filter(function (l) { return l.listingType === 'sale'; }).length;
-    var rent = listings.length - sale;
-    adminBody.innerHTML =
-      '<div class="adm-stats">' +
-        '<div><strong>' + listings.length + '</strong><span>Total</span></div>' +
-        '<div><strong>' + sale + '</strong><span>For Sale</span></div>' +
-        '<div><strong>' + rent + '</strong><span>For Rent</span></div>' +
-        '<div><strong>' + (Store.mode === 'supabase' ? 'Cloud' : 'Local') + '</strong><span>Storage</span></div>' +
-      '</div>' +
-      '<div class="adm-list">' + listings.map(function (l) {
-        return '<div class="adm-row" data-arow="' + l.id + '">' +
-          '<img src="' + esc(firstImg(l)) + '" onerror="this.src=\'' + placeholderImg(l) + '\'" />' +
-          '<div class="adm-meta"><strong>' + esc(l.title) + '</strong>' +
-            '<span>' + esc(l.locality) + ', ' + esc(l.city) + ' · ' + (l.listingType === 'rent' ? 'Rent' : 'Sale') + ' · ' + esc(l.owner) + '</span></div>' +
-          '<button class="adm-del" data-del="' + l.id + '">Delete</button>' +
-        '</div>';
-      }).join('') + '</div>';
+  async function refreshAdminView() {
+    adminBody.innerHTML = '<p class="adm-empty">Loading…</p>';
+    var user = null;
+    try { user = await Store.currentUser(); } catch (e) {}
+    if (!user) renderLogin(); else renderManage(user);
+  }
 
-    $$('[data-del]', adminBody).forEach(function (b) {
+  function renderLogin() {
+    var supa = Store.mode === 'supabase';
+    adminBody.innerHTML =
+      '<form class="adm-login" id="admLogin">' +
+        '<p class="adm-sub">' + (supa ? 'Sign in with your admin email &amp; password to manage listings and view enquiries.' : 'Local demo — enter the admin passcode.') + '</p>' +
+        (supa ? '<input type="email" name="email" placeholder="Admin email" autocomplete="username" required />' : '') +
+        '<input type="password" name="password" placeholder="' + (supa ? 'Password' : 'Passcode') + '" autocomplete="current-password" required />' +
+        '<button class="btn btn-primary full" type="submit">🔒 Sign in</button>' +
+        '<p class="form-note" id="admNote"></p>' +
+      '</form>';
+    $('#admLogin').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var note = $('#admNote'); note.style.color = ''; note.textContent = 'Signing in…';
+      var fd = new FormData(e.target);
+      try { await Store.signIn((fd.get('email') || '').trim(), fd.get('password') || ''); refreshAdminView(); }
+      catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + (err.message || 'Sign in failed'); }
+    });
+  }
+
+  async function renderManage(user) {
+    var leads = [];
+    try { leads = await Store.listLeads(); } catch (e) {}
+    adminBody.innerHTML =
+      '<div class="adm-top">' +
+        '<span class="adm-user">👤 ' + esc(user.email || 'admin') + '</span>' +
+        '<button class="adm-logout" id="admLogout">Sign out</button>' +
+      '</div>' +
+      '<div class="adm-tabs">' +
+        '<button class="adm-tabbtn' + (adminTab === 'listings' ? ' on' : '') + '" data-atab="listings">🏠 Listings (' + listings.length + ')</button>' +
+        '<button class="adm-tabbtn' + (adminTab === 'leads' ? ' on' : '') + '" data-atab="leads">📥 Leads (' + leads.length + ')</button>' +
+      '</div>' +
+      '<div id="admPane"></div>';
+    $('#admLogout').addEventListener('click', async function () { await Store.signOut(); adminTab = 'listings'; refreshAdminView(); });
+    $$('[data-atab]').forEach(function (b) { b.addEventListener('click', function () { adminTab = b.getAttribute('data-atab'); renderManage(user); }); });
+    if (adminTab === 'leads') renderLeadsPane(leads); else renderListingsPane();
+  }
+
+  function renderListingsPane() {
+    var pane = $('#admPane');
+    if (!listings.length) { pane.innerHTML = '<p class="adm-empty">No listings yet.</p>'; return; }
+    pane.innerHTML = '<div class="adm-list">' + listings.map(function (l) {
+      return '<div class="adm-row">' +
+        '<img src="' + esc(firstImg(l)) + '" onerror="this.src=\'' + placeholderImg(l) + '\'" />' +
+        '<div class="adm-meta"><strong>' + esc(l.title) + '</strong>' +
+          '<span>' + esc(l.locality) + ', ' + esc(l.city) + ' · ' + (l.listingType === 'rent' ? 'Rent' : 'Sale') + ' · ' + esc(l.owner) + '</span></div>' +
+        '<button class="adm-del" data-del="' + l.id + '">Delete</button></div>';
+    }).join('') + '</div>';
+    $$('[data-del]', pane).forEach(function (b) {
       b.addEventListener('click', async function () {
         var id = b.getAttribute('data-del');
         if (!confirm('Delete this listing permanently?')) return;
         b.disabled = true; b.textContent = '…';
-        try {
-          await Store.remove(id);
-          listings = listings.filter(function (x) { return x.id !== id; });
-          renderAdmin(); renderResults();
-        } catch (err) { alert('Delete failed: ' + (err.message || err)); b.disabled = false; b.textContent = 'Delete'; }
+        try { await Store.remove(id); listings = listings.filter(function (x) { return x.id !== id; }); renderResults(); refreshAdminView(); }
+        catch (err) { alert('Delete failed: ' + (err.message || err)); b.disabled = false; b.textContent = 'Delete'; }
+      });
+    });
+  }
+
+  function renderLeadsPane(leads) {
+    var pane = $('#admPane');
+    if (!leads.length) { pane.innerHTML = '<p class="adm-empty">No enquiries yet. They will appear here when buyers submit the “Request a callback” form on a property.</p>'; return; }
+    pane.innerHTML = '<div class="adm-list">' + leads.map(function (d) {
+      var wa = String(d.phone || '').replace(/\D/g, '').slice(-10);
+      var when = d.ts ? new Date(d.ts).toLocaleString() : '';
+      return '<div class="adm-row lead"><div class="adm-meta">' +
+        '<strong>' + esc(d.name) + ' · <a href="tel:' + esc(d.phone) + '">' + esc(d.phone) + '</a></strong>' +
+        '<span>📌 ' + esc(d.propertyTitle || 'General enquiry') + (d.city ? ' — ' + esc(d.city) : '') + '</span>' +
+        (d.message ? '<span class="lead-msg">“' + esc(d.message) + '”</span>' : '') +
+        '<span class="lead-when">' + esc(when) + '</span></div>' +
+        '<div class="lead-acts">' +
+          '<a class="btn btn-ghost sm" href="https://wa.me/91' + wa + '" target="_blank" rel="noopener">💬</a>' +
+          '<button class="adm-del" data-dlead="' + d.id + '">✕</button>' +
+        '</div></div>';
+    }).join('') + '</div>';
+    $$('[data-dlead]', pane).forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (!confirm('Delete this enquiry?')) return;
+        try { await Store.removeLead(b.getAttribute('data-dlead')); refreshAdminView(); }
+        catch (err) { alert('Delete failed: ' + (err.message || err)); }
       });
     });
   }

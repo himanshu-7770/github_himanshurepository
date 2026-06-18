@@ -255,6 +255,38 @@ h2{font-size:clamp(2rem,4vw,3.1rem)}
 .adm-del:hover{background:#f8d7d7}
 @media(max-width:520px){.adm-stats{grid-template-columns:repeat(2,1fr)}}
 
+/* admin login */
+.adm-login{max-width:360px;margin:6px auto;display:flex;flex-direction:column;gap:12px}
+.adm-sub{color:var(--ink-soft);font-size:.92rem;text-align:center;margin-bottom:4px}
+.adm-login input{padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#fff;font-family:'Manrope';font-size:.95rem}
+.adm-login input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,162,74,.14)}
+.adm-empty{text-align:center;color:var(--ink-soft);padding:26px}
+
+/* admin top + tabs */
+.adm-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.adm-user{font-weight:600;font-size:.92rem;color:var(--ink)}
+.adm-logout{border:1px solid var(--line);background:var(--bg-2);border-radius:50px;padding:7px 16px;font-family:'Manrope';font-weight:600;font-size:.85rem;cursor:pointer;color:var(--ink-soft)}
+.adm-logout:hover{color:var(--ink)}
+.adm-tabs{display:flex;gap:8px;margin-bottom:16px}
+.adm-tabbtn{flex:1;border:1px solid var(--line);background:var(--bg-2);border-radius:12px;padding:11px;font-family:'Manrope';font-weight:600;font-size:.9rem;cursor:pointer;color:var(--ink-soft)}
+.adm-tabbtn.on{background:linear-gradient(120deg,var(--gold-deep),var(--gold));color:#fff;border-color:transparent}
+
+/* leads */
+.adm-row.lead{align-items:flex-start}
+.adm-row.lead .adm-meta strong a{color:var(--gold-deep)}
+.lead-msg{display:block;font-style:italic;color:var(--ink-soft);margin-top:2px}
+.lead-when{display:block;font-size:.72rem;color:var(--ink-soft);margin-top:3px}
+.lead-acts{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.btn.sm{padding:8px 12px;min-width:auto}
+
+/* modal enquiry form */
+.m-enq{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.m-enq h4{font-family:'Cormorant Garamond';font-size:1.3rem;margin-bottom:10px}
+.m-enq-row{display:flex;gap:8px;margin-bottom:8px}
+.m-enq input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;font-family:'Manrope';font-size:.92rem;margin-bottom:8px}
+.m-enq-row input{margin-bottom:0}
+.m-enq input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,162,74,.14)}
+
 /* ===== Why / Features ===== */
 .features{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
 .feature{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:30px 26px;box-shadow:var(--shadow-sm);transition:transform .3s ease,box-shadow .3s ease}

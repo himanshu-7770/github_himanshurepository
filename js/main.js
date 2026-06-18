@@ -114,6 +114,16 @@
         (msg ? ' ' + msg : '');
       note.textContent = 'Opening WhatsApp to send your enquiry…';
       note.style.color = '';
+      // also save the enquiry as a lead (so it's captured in the dashboard)
+      if (window.Store && window.Store.addLead) {
+        var digits = phone.replace(/\D/g, '');
+        window.Store.addLead({
+          id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          name: name, phone: digits, message: msg,
+          propertyTitle: interest ? 'Website form: ' + interest : 'Website contact form',
+          city: '', ts: Date.now()
+        }).catch(function () {});
+      }
       setTimeout(function () {
         window.open('https://wa.me/919719910070?text=' + encodeURIComponent(text), '_blank');
         form.reset();

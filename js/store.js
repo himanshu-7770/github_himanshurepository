@@ -6,6 +6,8 @@
   'use strict';
 
   var LS_KEY = 'tme_listings_v1';
+  var LS_LEADS = 'tme_leads_v1';
+  var localAuthed = false;
   var cfg = window.TME_CONFIG || {};
   var hasSupa = !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY &&
     window.supabase && window.supabase.createClient);
@@ -33,6 +35,12 @@
   function localSave(list) {
     try { localStorage.setItem(LS_KEY, JSON.stringify(list)); return true; }
     catch (e) { return false; }
+  }
+  function localLeads() {
+    try { return JSON.parse(localStorage.getItem(LS_LEADS)) || []; } catch (e) { return []; }
+  }
+  function localLeadsSave(list) {
+    try { localStorage.setItem(LS_LEADS, JSON.stringify(list)); return true; } catch (e) { return false; }
   }
 
   /* ---------- Public API ---------- */
@@ -78,6 +86,46 @@
         localSave(list); return;
       }
       var res = await client.from('listings').delete().eq('id', id);
+      if (res.error) throw res.error;
+    },
+
+    /* ---------- Admin authentication ---------- */
+    signIn: async function (email, password) {
+      if (!client) {
+        // local demo mode: accept the passcode in the password field
+        if (password === (cfg.ADMIN_PASSCODE || 'moon-admin')) { localAuthed = true; return { email: 'admin (local)' }; }
+        throw new Error('Incorrect passcode.');
+      }
+      var res = await client.auth.signInWithPassword({ email: email, password: password });
+      if (res.error) throw res.error;
+      return res.data.user;
+    },
+    signOut: async function () {
+      if (!client) { localAuthed = false; return; }
+      await client.auth.signOut();
+    },
+    currentUser: async function () {
+      if (!client) return localAuthed ? { email: 'admin (local)' } : null;
+      var res = await client.auth.getSession();
+      return (res.data && res.data.session) ? res.data.session.user : null;
+    },
+
+    /* ---------- Leads (buyer enquiries) ---------- */
+    addLead: async function (lead) {
+      if (!client) { var l = localLeads(); l.unshift(lead); localLeadsSave(l); return lead; }
+      var res = await client.from('leads').insert({ id: lead.id, data: lead });
+      if (res.error) throw res.error;
+      return lead;
+    },
+    listLeads: async function () {
+      if (!client) return localLeads();
+      var res = await client.from('leads').select('id,data,created_at').order('created_at', { ascending: false });
+      if (res.error) throw res.error;
+      return (res.data || []).map(function (r) { return r.data; });
+    },
+    removeLead: async function (id) {
+      if (!client) { localLeadsSave(localLeads().filter(function (x) { return x.id !== id; })); return; }
+      var res = await client.from('leads').delete().eq('id', id);
       if (res.error) throw res.error;
     }
   };
