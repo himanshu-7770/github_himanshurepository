@@ -50,16 +50,9 @@
 
     // make sure a fresh Supabase project has the sample data
     seedIfEmpty: async function () {
+      // On a LIVE Supabase database we never auto-insert sample data — the
+      // business shows real listings only. Auto-seed applies to local demo.
       if (!client) { localList(); return; }
-      try {
-        var res = await client.from('listings').select('id').limit(1);
-        if (res.error) throw res.error;
-        if (res.data && res.data.length === 0) {
-          await client.from('listings').insert(SEED.map(function (s) {
-            return { id: s.id, data: s };
-          }));
-        }
-      } catch (e) { console.warn('[Store] seed skipped:', e.message); }
     },
 
     list: async function () {
