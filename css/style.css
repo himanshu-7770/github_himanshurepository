@@ -39,7 +39,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 /* ===== Loader ===== */
 .loader{position:fixed;inset:0;z-index:999;display:grid;place-content:center;justify-items:center;gap:14px;background:var(--bg);transition:opacity .6s ease,visibility .6s}
 .loader.hide{opacity:0;visibility:hidden}
-.loader-mark{font-size:46px;animation:floatY 3s ease-in-out infinite}
+.loader-mark{width:62px;height:62px;animation:floatY 3s ease-in-out infinite;filter:drop-shadow(0 6px 16px rgba(201,162,74,.35))}
 .loader-text{font-family:'Cormorant Garamond';letter-spacing:.4em;color:var(--ink-soft);font-size:.9rem;padding-left:.4em}
 
 /* ===== Nav ===== */
@@ -48,7 +48,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .nav.scrolled{background:rgba(247,244,238,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);box-shadow:0 6px 30px rgba(45,40,25,.06)}
 .nav.scrolled .nav-inner{padding:12px 22px}
 .brand{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond';font-size:1.4rem;font-weight:700}
-.brand-mark{font-size:1.3rem;filter:drop-shadow(0 2px 6px rgba(201,162,74,.5))}
+.brand-mark{width:34px;height:34px;display:block;filter:drop-shadow(0 2px 6px rgba(201,162,74,.4))}
+.footer .brand-mark{width:40px;height:40px}
 .brand-name span{color:var(--gold-deep)}
 .nav-links{display:flex;align-items:center;gap:30px}
 .nav-links a{font-family:'Manrope';font-weight:500;font-size:.94rem;color:var(--ink-soft);transition:color .2s;position:relative}
