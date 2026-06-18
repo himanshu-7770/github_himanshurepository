@@ -83,12 +83,18 @@
     document.querySelectorAll(selector || '.tilt').forEach(function (el) {
       if (el._tilt) return;            // avoid double-binding
       el._tilt = true;
+      var queued = false, lx = 0, ly = 0;
       el.addEventListener('mousemove', function (ev) {
         var r = el.getBoundingClientRect();
-        var px = (ev.clientX - r.left) / r.width - 0.5;
-        var py = (ev.clientY - r.top) / r.height - 0.5;
-        el.style.transform = 'perspective(900px) rotateX(' + (-py * 7).toFixed(2) +
-          'deg) rotateY(' + (px * 9).toFixed(2) + 'deg) translateY(-4px)';
+        lx = (ev.clientX - r.left) / r.width - 0.5;
+        ly = (ev.clientY - r.top) / r.height - 0.5;
+        if (queued) return;            // throttle to one update per frame
+        queued = true;
+        requestAnimationFrame(function () {
+          queued = false;
+          el.style.transform = 'perspective(900px) rotateX(' + (-ly * 7).toFixed(2) +
+            'deg) rotateY(' + (lx * 9).toFixed(2) + 'deg) translateY(-4px)';
+        });
       });
       el.addEventListener('mouseleave', function () { el.style.transform = ''; });
     });
@@ -139,8 +145,10 @@
   var camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
   camera.position.set(0, 0, 13);
 
-  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
+  // Lower resolution on touch devices to keep things smooth
+  var coarse = window.matchMedia('(pointer:coarse)').matches;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1 : 1.5));
 
   // Lights — soft, warm, elegant
   scene.add(new THREE.AmbientLight(0xfff4e0, 0.9));
@@ -211,8 +219,20 @@
   }
 
   var clock = new THREE.Clock();
-  function animate() {
+
+  // Pause rendering when the hero is off-screen or the tab is hidden,
+  // and cap the frame rate — prevents stutter/jank on low-end phones.
+  var heroVisible = true, pageVisible = true;
+  document.addEventListener('visibilitychange', function () { pageVisible = !document.hidden; });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { heroVisible = es[0].isIntersecting; }, { threshold: 0.01 }).observe(canvas);
+  }
+  var last = 0, frameMs = 1000 / 30;
+  function animate(now) {
     requestAnimationFrame(animate);
+    if (!heroVisible || !pageVisible) return;        // skip work when not visible
+    if (now - last < frameMs) return;                // cap ~30fps
+    last = now;
     resize();
     var t = clock.getElapsedTime();
 
@@ -233,5 +253,5 @@
     renderer.render(scene, camera);
   }
   resize();
-  animate();
+  requestAnimationFrame(animate);
 })();

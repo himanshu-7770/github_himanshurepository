@@ -83,6 +83,20 @@
     sel.innerHTML = opts.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('');
   })();
 
+  /* ---------- State / City dropdowns (India) ---------- */
+  (function () {
+    var IN = window.INDIA || { states: [], cities: {} };
+    var stateOpts = IN.states.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
+    var ps = $('#postState'); if (ps) ps.innerHTML = '<option value="">Select state</option>' + stateOpts;
+    var ss = $('#searchState'); if (ss) ss.innerHTML = '<option value="">All India</option>' + stateOpts;
+    function fillCities(listEl, state) {
+      if (!listEl) return;
+      listEl.innerHTML = (IN.cities[state] || []).map(function (c) { return '<option value="' + esc(c) + '"></option>'; }).join('');
+    }
+    if (ps) ps.addEventListener('change', function () { fillCities($('#postCityList'), ps.value); var pc = $('#postCity'); if (pc) pc.value = ''; });
+    if (ss) ss.addEventListener('change', function () { fillCities($('#searchCityList'), ss.value); renderResults(); });
+  })();
+
   /* ---------- search ---------- */
   var searchForm = $('#searchForm');
   function debounce(fn, ms) { var t; return function () { clearTimeout(t); t = setTimeout(fn, ms); }; }
@@ -101,11 +115,13 @@
     var wantType = currentMode === 'rent' ? 'rent' : 'sale';
     var fd = new FormData(searchForm);
     var q = (fd.get('q') || '').trim().toLowerCase();
+    var state = fd.get('state') || '';
     var ptype = fd.get('ptype') || '', bhk = fd.get('bhk') || '', budget = Number(fd.get('budget')) || 0;
     var favs = getFavs();
 
     var pool = listings.filter(function (l) {
       if (l.listingType !== wantType) return false;
+      if (state && l.state !== state) return false;
       if (showSavedOnly && favs.indexOf(l.id) < 0) return false;
       if (ptype && l.ptype !== ptype) return false;
       if (bhk) { var b = parseInt(l.bhk, 10) || 0; if (bhk === '4' ? b < 4 : b !== parseInt(bhk, 10)) return false; }
@@ -158,7 +174,7 @@
         '<div class="card-body">' +
           '<div class="price-row"><span class="price">' + priceLabel(l) + '</span><span class="ptype-pill">' + esc(l.ptype) + '</span></div>' +
           '<h3>' + esc(l.title) + '</h3>' +
-          '<p class="loc">📍 ' + esc(l.locality) + ', ' + esc(l.city) + '</p>' +
+          '<p class="loc">📍 ' + esc(l.locality) + ', ' + esc(l.city) + (l.state ? ', ' + esc(l.state) : '') + '</p>' +
           '<div class="card-meta">' + specs.map(function (s) { return '<span>' + s + '</span>'; }).join('') + '</div>' +
           '<div class="card-foot">' +
             '<span class="posted">by ' + esc(l.owner) + ' · ' + esc(l.postedBy || 'Owner') + '</span>' +
@@ -204,7 +220,7 @@
     rows.push(['Posted By', l.postedBy || 'Owner']);
     if (l.address) rows.push(['Address', l.address]);
 
-    var place = encodeURIComponent((l.address || (l.locality + ', ' + l.city)) + ', India');
+    var place = encodeURIComponent((l.address || (l.locality + ', ' + l.city + (l.state ? ', ' + l.state : ''))) + ', India');
     var msg = encodeURIComponent('Hi, I am interested in your property "' + l.title + '" (' + l.locality + ', ' + l.city + ') listed on The Moon Estate. Is it available?');
     var phone = String(l.phone || '').replace(/\D/g, '');
     var wa = phone ? '91' + phone.slice(-10) : '919719910070';
@@ -217,7 +233,7 @@
       '<div class="m-info">' +
         '<span class="tag ' + (l.listingType === 'rent' ? 'rent' : '') + '">' + (l.listingType === 'rent' ? 'For Rent' : 'For Sale') + '</span>' +
         '<h2>' + esc(l.title) + '</h2>' +
-        '<p class="m-loc">📍 ' + esc(l.locality) + ', ' + esc(l.city) + '</p>' +
+        '<p class="m-loc">📍 ' + esc(l.locality) + ', ' + esc(l.city) + (l.state ? ', ' + esc(l.state) : '') + '</p>' +
         '<div class="m-price">' + priceLabel(l) + '</div>' +
         (l.desc ? '<p class="m-desc">' + esc(l.desc) + '</p>' : '') +
         '<div class="m-table">' + rows.map(function (r) { return '<div><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>'; }).join('') + '</div>' +
@@ -345,6 +361,7 @@
       listingType: type, ptype: fd.get('ptype'), title: (fd.get('title') || '').trim(),
       bhk: fd.get('bhk') || '', bath: fd.get('bath') || '', furnish: fd.get('furnish') || '',
       area: Number(fd.get('area')) || '', areaUnit: fd.get('areaUnit'),
+      state: (fd.get('state') || '').trim(),
       city: (fd.get('city') || '').trim(), locality: (fd.get('locality') || '').trim(),
       address: (fd.get('address') || '').trim(), desc: (fd.get('desc') || '').trim(),
       owner: (fd.get('owner') || '').trim(), phone: phone, email: (fd.get('email') || '').trim(),

@@ -117,9 +117,14 @@
       <!-- BROWSE pane (buy + rent) -->
       <div class="portal-pane" id="browsePane">
         <form class="search-bar" id="searchForm">
+          <div class="sb-field">
+            <label>State</label>
+            <select name="state" id="searchState"><option value="">All India</option></select>
+          </div>
           <div class="sb-field grow">
-            <label>Location</label>
-            <input name="q" id="searchQ" placeholder="Search city or locality — e.g. Etah, Aligarh, Agra" autocomplete="off" />
+            <label>City / Locality</label>
+            <input name="q" id="searchQ" list="searchCityList" placeholder="Select or type city / locality" autocomplete="off" />
+            <datalist id="searchCityList"></datalist>
           </div>
           <div class="sb-field">
             <label>Property Type</label>
@@ -261,10 +266,16 @@
               </select>
             </label>
 
-            <label class="pf-field">City *
-              <input name="city" placeholder="e.g. Etah" required />
+            <label class="pf-field">State *
+              <select name="state" id="postState" required>
+                <option value="">Select state</option>
+              </select>
             </label>
-            <label class="pf-field">Locality / Area *
+            <label class="pf-field">City *
+              <input name="city" id="postCity" list="postCityList" placeholder="Select or type city" autocomplete="off" required />
+              <datalist id="postCityList"></datalist>
+            </label>
+            <label class="pf-field pf-full">Locality / Area *
               <input name="locality" placeholder="e.g. Vidya Vihar Colony, GT Road" required />
             </label>
             <label class="pf-field pf-full">Full Address
@@ -465,6 +476,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/india.js"></script>
   <script src="js/store.js"></script>
   <script src="js/main.js"></script>
   <script src="js/portal.js"></script>
