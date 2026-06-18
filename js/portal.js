@@ -310,7 +310,7 @@
   $$('[data-close]', shareModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(shareModal); }); });
 
   var SITE_NAME = 'The Moon Estate';
-  var SITE_TAGLINE = 'Premium plots & real estate in Etah, UP — buy, sell & rent property. Serving since 1995. 🌙';
+  var SITE_TAGLINE = 'Premium plots & real estate in India — buy, sell & rent property. Serving since 1995. 🌙';
   function siteUrl(id) {
     var base = location.origin + location.pathname;
     return id ? base + '#p=' + id : base;
