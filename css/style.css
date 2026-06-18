@@ -296,6 +296,7 @@ h2{font-size:clamp(2rem,4vw,3.1rem)}
 .auth-form input{padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#fff;font-family:'Manrope';font-size:.95rem}
 .auth-form input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,162,74,.14)}
 .auth-note-top{background:#f1ead9;color:var(--ink);padding:10px 14px;border-radius:10px;font-size:.88rem;text-align:center}
+.auth-sub{text-align:center;font-size:.9rem;color:var(--ink-soft);margin-bottom:4px}
 .auth-switch{text-align:center;font-size:.88rem;color:var(--ink-soft)}
 .auth-switch a{color:var(--gold-deep);font-weight:600}
 .account-inner h2{font-size:1.9rem;margin-bottom:18px}

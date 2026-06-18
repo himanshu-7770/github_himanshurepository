@@ -103,6 +103,25 @@
       if (res.error) throw res.error;
       return res.data.user;
     },
+    /* ---------- Email OTP (passwordless) ---------- */
+    sendOtp: async function (email) {
+      if (!client) throw new Error('OTP login needs the live database.');
+      var res = await client.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+      if (res.error) throw res.error;
+      return true;
+    },
+    verifyOtp: async function (email, token) {
+      if (!client) throw new Error('OTP login needs the live database.');
+      var res = await client.auth.verifyOtp({ email: email, token: token, type: 'email' });
+      if (res.error) throw res.error;
+      return res.data.user;
+    },
+    updateProfile: async function (meta) {
+      if (!client) return null;
+      var res = await client.auth.updateUser({ data: meta });
+      if (res.error) throw res.error;
+      return res.data.user;
+    },
     signOut: async function () {
       if (!client) { localAuthed = false; return; }
       await client.auth.signOut();

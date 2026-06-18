@@ -52,7 +52,7 @@
   var browsePane = $('#browsePane'), postPane = $('#postPane');
   function setMode(mode, scroll) {
     // Posting requires a logged-in account
-    if (mode === 'post' && !me) { pendingPost = true; openAuth('login'); return; }
+    if (mode === 'post' && !me) { pendingPost = true; openAuth(); return; }
     currentMode = mode;
     $$('#portalTabs .ptab').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-mode') === mode);
@@ -334,7 +334,7 @@
   postForm.addEventListener('submit', async function (e) {
     e.preventDefault();
     var note = $('#postNote');
-    if (!me) { pendingPost = true; openAuth('login'); return; }
+    if (!me) { pendingPost = true; openAuth(); return; }
     var fd = new FormData(postForm);
     var phone = (fd.get('phone') || '').replace(/\D/g, '');
     if (phone.length < 10) { note.style.color = '#c0392b'; note.textContent = 'Please enter a valid 10-digit phone number.'; return; }
@@ -391,15 +391,20 @@
   }
   if (authBtn) authBtn.addEventListener('click', function (e) {
     e.preventDefault();
-    if (me) openAccount(); else openAuth('login');
+    if (me) openAccount(); else openAuth();
   });
   $$('[data-close]', authModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(authModal); }); });
   $$('[data-close]', accountModal).forEach(function (el) { el.addEventListener('click', function () { closeOverlay(accountModal); }); });
 
-  function openAuth(tab) { renderAuth(tab || 'login'); openOverlay(authModal); }
+  function openAuth(tab) { renderAuth(tab || 'otp'); openOverlay(authModal); }
+
+  function bindAuthSwitches() {
+    $$('[data-authtab]', authBody).forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); renderAuth(a.getAttribute('data-authtab')); }); });
+  }
 
   function renderAuth(tab) {
     $$('.auth-tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-authtab') === tab); });
+    if (tab === 'otp') { renderOtpEmail(); return; }
     if (tab === 'signup') {
       authBody.innerHTML =
         '<form class="auth-form" id="authForm">' +
@@ -427,6 +432,73 @@
     $('#authForm').addEventListener('submit', tab === 'signup' ? handleSignup : handleLogin);
   }
   $$('.auth-tab').forEach(function (b) { b.addEventListener('click', function () { renderAuth(b.getAttribute('data-authtab')); }); });
+
+  /* ----- Email OTP flow ----- */
+  function renderOtpEmail(prefill) {
+    authBody.innerHTML =
+      '<form class="auth-form" id="authForm">' +
+        (pendingPost ? '<p class="auth-note-top">Log in to post your property.</p>' : '') +
+        '<p class="auth-sub">We\'ll email you a 6-digit code — no password needed.</p>' +
+        '<input name="email" type="email" placeholder="Your email" value="' + esc(prefill || '') + '" required />' +
+        '<button class="btn btn-primary full" type="submit">Send code</button>' +
+        '<p class="form-note" id="authNote"></p>' +
+        '<p class="auth-switch">Prefer a password? <a href="#" data-authtab="login">Password login</a></p>' +
+      '</form>';
+    bindAuthSwitches();
+    $('#authForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var note = $('#authNote'); note.style.color = ''; note.textContent = 'Sending code…';
+      var email = (new FormData(e.target).get('email') || '').trim();
+      try { await Store.sendOtp(email); renderOtpCode(email); }
+      catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + friendlyAuthErr(err); }
+    });
+  }
+  function renderOtpCode(email) {
+    authBody.innerHTML =
+      '<form class="auth-form" id="authForm">' +
+        '<p class="auth-sub">Enter the 6-digit code sent to <strong>' + esc(email) + '</strong>.</p>' +
+        '<input name="token" inputmode="numeric" maxlength="6" placeholder="6-digit code" required />' +
+        '<button class="btn btn-primary full" type="submit">Verify & login</button>' +
+        '<p class="form-note" id="authNote"></p>' +
+        '<p class="auth-switch"><a href="#" id="otpBack">← Different email</a> · <a href="#" id="otpResend">Resend code</a></p>' +
+      '</form>';
+    $('#otpBack').addEventListener('click', function (e) { e.preventDefault(); renderOtpEmail(email); });
+    $('#otpResend').addEventListener('click', async function (e) {
+      e.preventDefault(); var note = $('#authNote'); note.style.color = ''; note.textContent = 'Resending…';
+      try { await Store.sendOtp(email); note.textContent = 'Code resent.'; } catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + friendlyAuthErr(err); }
+    });
+    $('#authForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var note = $('#authNote'); note.style.color = ''; note.textContent = 'Verifying…';
+      var token = (new FormData(e.target).get('token') || '').trim();
+      try {
+        await Store.verifyOtp(email, token);
+        me = await Store.currentUser();
+        if (me && !(me.user_metadata && me.user_metadata.name)) { renderCompleteProfile(); return; }
+        afterAuthSuccess();
+      } catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + friendlyAuthErr(err); }
+    });
+  }
+  function renderCompleteProfile() {
+    $$('.auth-tab').forEach(function (b) { b.classList.remove('on'); });
+    authBody.innerHTML =
+      '<form class="auth-form" id="authForm">' +
+        '<p class="auth-sub">Welcome! Just complete your profile to finish.</p>' +
+        '<input name="name" placeholder="Full name" required />' +
+        '<input name="phone" type="tel" placeholder="Phone (10-digit)" required />' +
+        '<button class="btn btn-primary full" type="submit">Save &amp; continue</button>' +
+        '<p class="form-note" id="authNote"></p>' +
+      '</form>';
+    $('#authForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var note = $('#authNote'); note.style.color = ''; note.textContent = 'Saving…';
+      var fd = new FormData(e.target);
+      var phone = (fd.get('phone') || '').replace(/\D/g, '');
+      if (phone.length < 10) { note.style.color = '#c0392b'; note.textContent = 'Enter a valid 10-digit phone.'; return; }
+      try { await Store.updateProfile({ name: (fd.get('name') || '').trim(), phone: phone }); me = await Store.currentUser(); afterAuthSuccess(); }
+      catch (err) { note.style.color = '#c0392b'; note.textContent = '⚠️ ' + (err.message || 'Could not save'); }
+    });
+  }
 
   async function handleLogin(e) {
     e.preventDefault();
