@@ -456,11 +456,12 @@
   function renderOtpCode(email) {
     authBody.innerHTML =
       '<form class="auth-form" id="authForm">' +
-        '<p class="auth-sub">Enter the 6-digit code sent to <strong>' + esc(email) + '</strong>.</p>' +
-        '<input name="token" inputmode="numeric" maxlength="6" placeholder="6-digit code" required />' +
-        '<button class="btn btn-primary full" type="submit">Verify & login</button>' +
+        '<p class="auth-sub">We emailed <strong>' + esc(email) + '</strong>.<br>👉 Click the <strong>login link</strong> in that email, ' +
+        'or if it shows a <strong>6-digit code</strong>, type it below.</p>' +
+        '<input name="token" inputmode="numeric" maxlength="6" placeholder="6-digit code (optional)" />' +
+        '<button class="btn btn-primary full" type="submit">Verify code</button>' +
         '<p class="form-note" id="authNote"></p>' +
-        '<p class="auth-switch"><a href="#" id="otpBack">← Different email</a> · <a href="#" id="otpResend">Resend code</a></p>' +
+        '<p class="auth-switch"><a href="#" id="otpBack">← Different email</a> · <a href="#" id="otpResend">Resend email</a></p>' +
       '</form>';
     $('#otpBack').addEventListener('click', function (e) { e.preventDefault(); renderOtpEmail(email); });
     $('#otpResend').addEventListener('click', async function (e) {
@@ -469,8 +470,10 @@
     });
     $('#authForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      var note = $('#authNote'); note.style.color = ''; note.textContent = 'Verifying…';
+      var note = $('#authNote'); note.style.color = '';
       var token = (new FormData(e.target).get('token') || '').trim();
+      if (!token) { note.style.color = '#c0392b'; note.textContent = 'No code? Just click the login link in your email instead.'; return; }
+      note.textContent = 'Verifying…';
       try {
         await Store.verifyOtp(email, token);
         me = await Store.currentUser();

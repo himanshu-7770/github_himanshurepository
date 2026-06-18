@@ -106,7 +106,8 @@
     /* ---------- Email OTP (passwordless) ---------- */
     sendOtp: async function (email) {
       if (!client) throw new Error('OTP login needs the live database.');
-      var res = await client.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+      var redirect = (typeof window !== 'undefined' && window.location) ? window.location.origin + window.location.pathname : undefined;
+      var res = await client.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: redirect } });
       if (res.error) throw res.error;
       return true;
     },
